@@ -210,15 +210,15 @@ class OptimizeAls:
 def main():
     parser = ArgumentParser()
     parser.add_argument('--device', default='cuda') # 'cuda' or 'cpu'
-    parser.add_argument('--out_dir', default='/home/tajima/dataset/EG25/als')
+    parser.add_argument('--out_dir', default=None)
     parser.add_argument('--start', default=0, type=int)
     parser.add_argument('--end', default=99999, type=int)
     parser.add_argument('--t_max', default=20, type=int)
     parser.add_argument('--num_workers', default=2, type=int)
     parser.add_argument('--n_itr_dir_and_inten', default=1000, type=int)
     parser.add_argument('--n_itr_sigma', default=300, type=int)
-    parser.add_argument('--env_dir', default='/home/tajima/OLD_HOME/dataset/envmap')
-    parser.add_argument('--sphere_dir', default='/home/tajima/dataset/EG25/sphere')
+    parser.add_argument('--env_dir', default=None)
+    parser.add_argument('--sphere_dir', default='./data/sphere')
     parser.add_argument('--lr_max', default=1, type=float)
     parser.add_argument('--lr_min', default=0.00001, type=float)
     parser.add_argument('--debug', action='store_true')

@@ -149,12 +149,12 @@ class TrainDepth:
 def main():
     parser = ArgumentParser()
     parser.add_argument('--device', default='cuda') # 'cuda' or 'cpu'
-    parser.add_argument('--out_dir', default='/home/tajima/All-frequency_Full-body_Human_Image_Relighting/outputs/train_depth')
+    parser.add_argument('--out_dir', default='./outputs/train_depth')
     parser.add_argument('--t_max', default=20, type=int)
     parser.add_argument('--batch_size', default=28, type=int)
     parser.add_argument('--num_workers', default=8, type=int)
     parser.add_argument('--n_epoch', default=2000, type=int)
-    parser.add_argument('--dataset_dir', default='/home/tajima/dataset/humgen_dataset')
+    parser.add_argument('--dataset_dir', default=None)
     parser.add_argument('--n_train_samples', default=6000, type=int)
     parser.add_argument('--lr_max', default=0.001, type=float)
     parser.add_argument('--lr_min', default=0.00001, type=float)
@@ -167,7 +167,7 @@ def main():
     parser.add_argument('--seed', default=0, type=int)
     parser.add_argument('--eps', default=1e-6, type=float)
     parser.add_argument('--use_other_dataset', action='store_true')
-    parser.add_argument('--other_dataset_dir', default='/home/tajima/dataset/mesh_dataset')
+    parser.add_argument('--other_dataset_dir', default=None)
     opts = parser.parse_args()
 
     np.random.seed(opts.seed)

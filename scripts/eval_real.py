@@ -249,12 +249,12 @@ class EvalReal:
 def main(): 
     parser = ArgumentParser()
     parser.add_argument('--device', default='cuda') # cuda or cpu
-    parser.add_argument('--out_dir', default='/home/tajima/All-frequency_Full-body_Human_Image_Relighting/outputs/eval_real')
+    parser.add_argument('--out_dir', default='./outputs/eval_real')
     parser.add_argument('--batch_size', default=1, type=int) #FIX
-    parser.add_argument('--img_dir', default='/home/tajima/dataset/realimg/unsplash')
-    parser.add_argument('--checkpoint_path_firststage', default='/home/tajima/All-frequency_Full-body_Human_Image_Relighting/outputs/train_firststage/checkpoints/0019epoch.pth')
-    parser.add_argument('--checkpoint_path_depth', default='/home/tajima/All-frequency_Full-body_Human_Image_Relighting/outputs/train_depth/checkpoints/0179epoch.pth')
-    parser.add_argument('--checkpoint_path_refineshadow', default='/home/tajima/All-frequency_Full-body_Human_Image_Relighting/outputs/train_refineshadow/checkpoints/0019epoch.pth')
+    parser.add_argument('--img_dir', default='./data/test_imgs')
+    parser.add_argument('--checkpoint_path_firststage', default=None)
+    parser.add_argument('--checkpoint_path_depth', default=None)
+    parser.add_argument('--checkpoint_path_refineshadow', default=None)
     parser.add_argument('--d_all_min', default=2.873195, type=float)
     parser.add_argument('--d_all_max', default=5.990806, type=float)
     parser.add_argument('--camera_distance', default=4.0, type=float)
@@ -266,7 +266,7 @@ def main():
     parser.add_argument('--resolution_optimize', default=256, type=int)
     parser.add_argument('--resolution', default=1024, type=int)
     parser.add_argument('--eps', default=1e-6, type=float)
-    parser.add_argument('--als_dir', default='/home/tajima/dataset/EG25/als')
+    parser.add_argument('--als_dir', default='./data/test_lights')
     parser.add_argument('--n_light', default=16, type=int)
     parser.add_argument('--n_frame', default=120, type=int)
     parser.add_argument('--fps', default=24, type=float)
