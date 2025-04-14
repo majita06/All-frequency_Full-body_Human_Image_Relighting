@@ -2,7 +2,6 @@ import os
 import torch
 import numpy as np
 import cv2
-import json
 import torch.nn.functional as F
 
 

@@ -3,7 +3,6 @@ import torch
 import torch.nn.functional as F
 import torch.nn as nn
 import nvdiffrast.torch as dr
-glctx = dr.RasterizeCudaContext(device=self.opts.device)
 import os
 os.environ["OPENCV_IO_ENABLE_OPENEXR"]="True"
 import cv2
@@ -14,6 +13,7 @@ class ShadowMapping(nn.Module):
     def __init__(self,opts,resolution):
         super(ShadowMapping, self).__init__()
         self.opts = opts
+        self.glctx = dr.RasterizeCudaContext(device=self.opts.device)
         self.resolution = resolution
         self.fov = 2*np.arctan(0.5*36/self.opts.focal_length)
         self.cot = np.tan(0.5*(np.pi - self.fov))
@@ -77,11 +77,11 @@ class ShadowMapping(nn.Module):
         posw_center = torch.matmul(posw,self.local_mat.t()) 
         mv_mat_shadow_light = torch.einsum('xy,dyz->dxz',self.m_dist_mat,self.rotate_xyz_light(als[:,0:3]))
         posw_from_light = torch.einsum('vw,dxw->dvx',posw_center, mv_mat_shadow_light)
-        posw_from_light = torch.einsum('dvw,xw->dvx',posw_from_light,self.self.orth_proj)
+        posw_from_light = torch.einsum('dvw,xw->dvx',posw_from_light,self.orth_proj)
 
 
         # z_map: Depth map from light source
-        _z_map, _ = dr.rasterize(glctx, posw_from_light.contiguous(), idx, resolution=[self.resolution, self.resolution])
+        _z_map, _ = dr.rasterize(self.glctx, posw_from_light.contiguous(), idx, resolution=[self.resolution, self.resolution])
         z_map = 0.5 * (1+_z_map[...,2])
         mask_fromlight = (z_map!=0.5).to(torch.float32)
         z_map[mask_fromlight==0] = 1
@@ -134,13 +134,13 @@ class ShadowMapping(nn.Module):
                                         [  0,    0, -(far+near)/(far-near), -(2*far*near)/(far-near)],
                                         [  0,    0,           -1,              0]]),self.opts.device).to(torch.float32)
         posw_fromcamera = torch.matmul(posw_zm,pers_proj.t())[None]
-        depth_fromcamera = dr.rasterize(glctx, posw_fromcamera, idx, resolution=[self.resolution, self.resolution])[0]
+        depth_fromcamera = dr.rasterize(self.glctx, posw_fromcamera, idx, resolution=[self.resolution, self.resolution])[0]
 
 
 
         # f and sf are pasted on the mesh viewed from the camera
-        f_map, _ = dr.interpolate(f[:,:,None], depth_fromcamera.expand(self.opts.n_light,-1,-1,-1), idx)
-        sf_map, _ = dr.interpolate(sf[:,:,None], depth_fromcamera.expand(self.opts.n_light,-1,-1,-1), idx)
+        f_map, _ = dr.interpolate(f[:,:,None], depth_fromcamera.expand(self.opts.n_light,-1,-1,-1).contiguous(), idx)
+        sf_map, _ = dr.interpolate(sf[:,:,None], depth_fromcamera.expand(self.opts.n_light,-1,-1,-1).contiguous(), idx)
         if self.train:
             sf_map = dr.antialias(sf_map,
                                   depth_fromcamera.expand(self.opts.n_light,-1,-1,-1),

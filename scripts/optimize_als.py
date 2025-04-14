@@ -22,16 +22,16 @@ class OptimizeAls:
 
         self.env_paths = sorted(glob('%s/*/*.hdr' % self.opts.env_dir))[self.opts.start:self.opts.end]
 
-        self.mask_sphere = utils.np2torch(cv2.imread('%s/mask_sphere.png' % self.opts.dataset_dir, cv2.IMREAD_GRAYSCALE)[None,None].astype(np.float32),self.opts.device)/255.
-        self.normal_gt_sphere = utils.np2torch(cv2.imread('%s/normal_sphere.png' % self.opts.dataset_dir,cv2.IMREAD_COLOR).astype(np.float32),self.opts.device).permute(2,0,1)[None,[2,1,0]]/255.
+        self.mask_sphere = utils.np2torch(cv2.imread('%s/mask_sphere.png' % self.opts.sphere_dir, cv2.IMREAD_GRAYSCALE)[None,None].astype(np.float32),self.opts.device)/255.
+        self.normal_gt_sphere = utils.np2torch(cv2.imread('%s/normal_sphere.png' % self.opts.sphere_dir,cv2.IMREAD_COLOR).astype(np.float32),self.opts.device).permute(2,0,1)[None,[2,1,0]]/255.
         self.normal_gt_sphere[:,0] = 2.*self.normal_gt_sphere[:,0]-1.
         self.normal_gt_sphere[:,1] = -(2.*self.normal_gt_sphere[:,1]-1.)
         self.normal_gt_sphere = self.normal_gt_sphere / np.linalg.norm(self.normal_gt_sphere, axis=1, keepdims=True).clip(self.opts.eps, None)
-        self.normal_gt_sphere_and_plane = utils.np2torch(cv2.imread('%s/normal_sphere_and_plane.png' % self.opts.dataset_dir,cv2.IMREAD_COLOR).astype(np.float32),self.opts.device).permute(2,0,1)[None,[2,1,0]]/255.
+        self.normal_gt_sphere_and_plane = utils.np2torch(cv2.imread('%s/normal_sphere_and_plane.png' % self.opts.sphere_dir,cv2.IMREAD_COLOR).astype(np.float32),self.opts.device).permute(2,0,1)[None,[2,1,0]]/255.
         self.normal_gt_sphere_and_plane[:,0] = 2.*self.normal_gt_sphere_and_plane[:,0]-1.
         self.normal_gt_sphere_and_plane[:,1] = -(2.*self.normal_gt_sphere_and_plane[:,1]-1.)
         self.normal_gt_sphere_and_plane = self.normal_gt_sphere_and_plane / np.linalg.norm(self.normal_gt_sphere_and_plane, axis=1, keepdims=True).clip(self.opts.eps, None)
-        self.depth_gt_sphere_and_plane = utils.np2torch(cv2.imread('%s/depth_sphere_and_plane.exr' % self.opts.dataset_dir,-1),self.opts.device)[None,None,...,0]
+        self.depth_gt_sphere_and_plane = utils.np2torch(cv2.imread('%s/depth_sphere_and_plane.exr' % self.opts.sphere_dir,-1),self.opts.device)[None,None,...,0]
 
         self.shadow_mapping = ShadowMapping(self.opts, resolution=self.opts.resolution_optimize)
         self.lambert = Lambert().lambert
@@ -48,14 +48,14 @@ class OptimizeAls:
         for i in range(self.opts.n_rot):
             if i < (self.opts.n_rot - 2):
                 theta = 2 * np.pi * i / (self.opts.n_rot - 2)
-                diffuse_shading_wo_shadow_sphere_gt[i:i+1] = utils.np2torch(cv2.imread('%s/%s/diffuse_shading_wo_shadow_sphere__%.4f.exr' % (self.opts.dataset_dir,env_name,theta),-1),self.opts.device).permute(2,0,1)[None,[2,1,0]]
-                specular_shading_wo_shadow_sphere_gt[i:i+1] = utils.np2torch(cv2.imread('%s/%s/specular_shading_wo_shadow_sphere__%.4f.exr' % (self.opts.dataset_dir,env_name,theta),-1),self.opts.device).permute(2,0,1)[None,[2,1,0]]
+                diffuse_shading_wo_shadow_sphere_gt[i:i+1] = utils.np2torch(cv2.imread('%s/%s/diffuse_shading_wo_shadow_sphere__%.4f.exr' % (self.opts.sphere_dir,env_name,theta),-1),self.opts.device).permute(2,0,1)[None,[2,1,0]]
+                specular_shading_wo_shadow_sphere_gt[i:i+1] = utils.np2torch(cv2.imread('%s/%s/specular_shading_wo_shadow_sphere__%.4f.exr' % (self.opts.sphere_dir,env_name,theta),-1),self.opts.device).permute(2,0,1)[None,[2,1,0]]
             elif i == (self.opts.n_rot - 2):
-                diffuse_shading_wo_shadow_sphere_gt[i:i+1] = utils.np2torch(cv2.imread('%s/%s/diffuse_shading_wo_shadow_sphere__up.exr' % (self.opts.dataset_dir,env_name),-1),self.opts.device).permute(2,0,1)[None,[2,1,0]]
-                specular_shading_wo_shadow_sphere_gt[i:i+1] = utils.np2torch(cv2.imread('%s/%s/specular_shading_wo_shadow_sphere__up.exr' % (self.opts.dataset_dir,env_name),-1),self.opts.device).permute(2,0,1)[None,[2,1,0]]
+                diffuse_shading_wo_shadow_sphere_gt[i:i+1] = utils.np2torch(cv2.imread('%s/%s/diffuse_shading_wo_shadow_sphere__up.exr' % (self.opts.sphere_dir,env_name),-1),self.opts.device).permute(2,0,1)[None,[2,1,0]]
+                specular_shading_wo_shadow_sphere_gt[i:i+1] = utils.np2torch(cv2.imread('%s/%s/specular_shading_wo_shadow_sphere__up.exr' % (self.opts.sphere_dir,env_name),-1),self.opts.device).permute(2,0,1)[None,[2,1,0]]
             elif i == (self.opts.n_rot - 1):
-                diffuse_shading_wo_shadow_sphere_gt[i:i+1] = utils.np2torch(cv2.imread('%s/%s/diffuse_shading_wo_shadow_sphere__bottom.exr' % (self.opts.dataset_dir,env_name),-1),self.opts.device).permute(2,0,1)[None,[2,1,0]]
-                specular_shading_wo_shadow_sphere_gt[i:i+1] = utils.np2torch(cv2.imread('%s/%s/specular_shading_wo_shadow_sphere__bottom.exr' % (self.opts.dataset_dir,env_name),-1),self.opts.device).permute(2,0,1)[None,[2,1,0]]
+                diffuse_shading_wo_shadow_sphere_gt[i:i+1] = utils.np2torch(cv2.imread('%s/%s/diffuse_shading_wo_shadow_sphere__bottom.exr' % (self.opts.sphere_dir,env_name),-1),self.opts.device).permute(2,0,1)[None,[2,1,0]]
+                specular_shading_wo_shadow_sphere_gt[i:i+1] = utils.np2torch(cv2.imread('%s/%s/specular_shading_wo_shadow_sphere__bottom.exr' % (self.opts.sphere_dir,env_name),-1),self.opts.device).permute(2,0,1)[None,[2,1,0]]
         diffuse_shading_wo_shadow_sphere_gt = self.mask_sphere * diffuse_shading_wo_shadow_sphere_gt
         specular_shading_wo_shadow_sphere_gt = self.mask_sphere * specular_shading_wo_shadow_sphere_gt
         
@@ -131,11 +131,11 @@ class OptimizeAls:
         for i in range(self.opts.n_rot):
             if i < (self.opts.n_rot - 2):
                 theta = 2 * np.pi * i / (self.opts.n_rot-2)
-                diffuse_shading_w_shadow_sphere_and_plane_gt[i:i+1] = utils.np2torch(cv2.imread('%s/%s/diffuse_shading_w_shadow_sphere_and_plane__%.4f.exr' % (self.opts.dataset_dir,env_name,theta),-1),self.opts.device).permute(2,0,1)[None,[2,1,0]]
+                diffuse_shading_w_shadow_sphere_and_plane_gt[i:i+1] = utils.np2torch(cv2.imread('%s/%s/diffuse_shading_w_shadow_sphere_and_plane__%.4f.exr' % (self.opts.sphere_dir,env_name,theta),-1),self.opts.device).permute(2,0,1)[None,[2,1,0]]
             elif i == (self.opts.n_rot - 2):
-                diffuse_shading_w_shadow_sphere_and_plane_gt[i:i+1] = utils.np2torch(cv2.imread('%s/%s/diffuse_shading_w_shadow_sphere_and_plane__up.exr' % (self.opts.dataset_dir,env_name),-1),self.opts.device).permute(2,0,1)[None,[2,1,0]]
+                diffuse_shading_w_shadow_sphere_and_plane_gt[i:i+1] = utils.np2torch(cv2.imread('%s/%s/diffuse_shading_w_shadow_sphere_and_plane__up.exr' % (self.opts.sphere_dir,env_name),-1),self.opts.device).permute(2,0,1)[None,[2,1,0]]
             elif i == (self.opts.n_rot - 1):
-                diffuse_shading_w_shadow_sphere_and_plane_gt[i:i+1] = utils.np2torch(cv2.imread('%s/%s/diffuse_shading_w_shadow_sphere_and_plane__bottom.exr' % (self.opts.dataset_dir,env_name),-1),self.opts.device).permute(2,0,1)[None,[2,1,0]]
+                diffuse_shading_w_shadow_sphere_and_plane_gt[i:i+1] = utils.np2torch(cv2.imread('%s/%s/diffuse_shading_w_shadow_sphere_and_plane__bottom.exr' % (self.opts.sphere_dir,env_name),-1),self.opts.device).permute(2,0,1)[None,[2,1,0]]
         diffuse_shading_w_shadow_sphere_and_plane_gt = self.mask_edge * diffuse_shading_w_shadow_sphere_and_plane_gt
 
         diffuse_shading_wo_shadows_sphere_and_plane_pred = self.lambert(self.normal_gt_sphere_and_plane.expand(self.opts.n_rot,-1,-1,-1),
@@ -218,7 +218,7 @@ def main():
     parser.add_argument('--n_itr_dir_and_inten', default=1000, type=int)
     parser.add_argument('--n_itr_sigma', default=300, type=int)
     parser.add_argument('--env_dir', default='/home/tajima/OLD_HOME/dataset/envmap')
-    parser.add_argument('--dataset_dir', default='/home/tajima/dataset/EG25/sphere')
+    parser.add_argument('--sphere_dir', default='/home/tajima/dataset/EG25/sphere')
     parser.add_argument('--lr_max', default=1, type=float)
     parser.add_argument('--lr_min', default=0.00001, type=float)
     parser.add_argument('--debug', action='store_true')

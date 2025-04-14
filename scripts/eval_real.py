@@ -248,6 +248,7 @@ class EvalReal:
 
 def main(): 
     parser = ArgumentParser()
+    parser.add_argument('--device', default='cuda') # cuda or cpu
     parser.add_argument('--out_dir', default='/home/tajima/All-frequency_Full-body_Human_Image_Relighting/outputs/eval_real')
     parser.add_argument('--batch_size', default=1, type=int) #FIX
     parser.add_argument('--img_dir', default='/home/tajima/dataset/realimg/unsplash')

@@ -58,10 +58,13 @@ class ImagesDataset(Dataset):
             else:
                 data_dict['specular'] = cv2.imread('%s/specular.png' % human_dir, cv2.IMREAD_GRAYSCALE)[None].astype(np.float32)/255.
                 data_dict['roughness'] = cv2.imread('%s/roughness.png' % human_dir, cv2.IMREAD_GRAYSCALE)[None].astype(np.float32)/255.
-                data_dict['mask_eye_and_shoe'] = cv2.imread('%s/label.png' % human_dir, cv2.IMREAD_COLOR).transpose(2,0,1)[[2,1,0]].astype(np.float32)/255.
-                data_dict['mask_eye_and_shoe'] = np.where(((data_dict['mask_eye_and_shoe'][0] == 0) & (data_dict['mask_eye_and_shoe'][1] == 1) & (data_dict['mask_eye_and_shoe'][2] == 0) | 
-                                            ((data_dict['mask_eye_and_shoe'][0] == 0) & (data_dict['mask_eye_and_shoe'][1] == 1) & (data_dict['mask_eye_and_shoe'][2] == 1))),
-                                            0, 1)[None].astype(np.float32)
+                if os.path.exists('%s/label.png' % human_dir):
+                    data_dict['mask_eye_and_shoe'] = cv2.imread('%s/label.png' % human_dir, cv2.IMREAD_COLOR).transpose(2,0,1)[[2,1,0]].astype(np.float32)/255.
+                    data_dict['mask_eye_and_shoe'] = np.where(((data_dict['mask_eye_and_shoe'][0] == 0) & (data_dict['mask_eye_and_shoe'][1] == 1) & (data_dict['mask_eye_and_shoe'][2] == 0) | 
+                                                ((data_dict['mask_eye_and_shoe'][0] == 0) & (data_dict['mask_eye_and_shoe'][1] == 1) & (data_dict['mask_eye_and_shoe'][2] == 1))),
+                                                0, 1)[None].astype(np.float32)
+                else:
+                    data_dict['mask_eye_and_shoe'] = self.dummy
         if self.id == 'firststage' or self.id == 'refineshadow':
             data_dict['normal'] = cv2.imread('%s/normal.png' % human_dir, cv2.IMREAD_COLOR).transpose(2,0,1)[[2,1,0]].astype(np.float32)/255.
             data_dict['normal'][0] = 2.*data_dict['normal'][0]-1.
