@@ -1,0 +1,9 @@
+bpy==3.6.0
+kornia==0.7.3
+lpips==0.1.4
+numpy==2.1.2
+opencv-contrib-python==4.10.0.84
+torch==2.5.1+cu124
+torchvision==0.20.1
+tqdm==4.66.6
+
