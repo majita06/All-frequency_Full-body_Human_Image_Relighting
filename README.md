@@ -90,13 +90,13 @@ The following data are required as a minimum for learning.
         │   ├── normal.png
         │   ├── depth.exr
         │   ├── mask.png
-        │   ├── (env name a)__(rotation angle)
+        │   ├── (environment map name)__(rotation angle)
         │   │   ├── rendering_w_shadow_w_specular.png
         │   │   ├── rendering_wo_shadow_w_specular.exr
         │   │   ├── diffuse_shading_wo_shadow.exr
         │   │   ├── diffuse_shading_w_shadow.exr
         │   │   └── specular_shading_wo_shadow.exr
-        │   ├── (env name b)__(rotation angle)
+        │   ├── (environment map name)__(rotation angle)
         │       └── ...
         ├── ...
 
