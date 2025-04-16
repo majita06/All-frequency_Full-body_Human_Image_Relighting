@@ -7,25 +7,29 @@ class UNet_multi(nn.Module):
     def __init__(self, opts, in_channels, n_group=16):
         super(UNet_multi, self).__init__()
         self.opts = opts
+        self.avgpool = nn.AvgPool2d(kernel_size=2, stride=2)
+        self.upsample = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True)
+
         self.enc = nn.ModuleList([])
 
+        
         self.enc.append(nn.Sequential(nn.Conv2d(in_channels, 32, 3, padding=1, bias=False),
                                    nn.GroupNorm(n_group, 32),
                                    nn.ReLU(inplace=True)))
 
-        self.enc.append(nn.Sequential(nn.AvgPool2d(kernel_size=2, stride=2),
+        self.enc.append(nn.Sequential(self.avgpool,
                                         nn.Conv2d(32, 64, 3, padding=1, bias=False),
                                         nn.GroupNorm(n_group, 64),
                                         nn.ReLU(inplace=True)))
-        self.enc.append(nn.Sequential(nn.AvgPool2d(kernel_size=2, stride=2),
+        self.enc.append(nn.Sequential(self.avgpool,
                                         nn.Conv2d(64, 128, 3, padding=1, bias=False),
                                         nn.GroupNorm(n_group, 128),
                                         nn.ReLU(inplace=True)))
-        self.enc.append(nn.Sequential(nn.AvgPool2d(kernel_size=2, stride=2),
+        self.enc.append(nn.Sequential(self.avgpool,
                                         nn.Conv2d(128, 256, 3, padding=1, bias=False),
                                         nn.GroupNorm(n_group, 256),
                                         nn.ReLU(inplace=True)))
-        self.enc.append(nn.Sequential(nn.AvgPool2d(kernel_size=2, stride=2),
+        self.enc.append(nn.Sequential(self.avgpool,
                                         nn.Conv2d(256, 512, 3, padding=1, bias=False),
                                         nn.GroupNorm(n_group, 512),
                                         nn.ReLU(inplace=True)))
@@ -44,15 +48,15 @@ class UNet_multi(nn.Module):
         self.dec_asr.append(nn.Sequential(nn.Conv2d(1024, 256, 3, padding=1, bias=False),
                                         nn.GroupNorm(n_group, 256),
                                         nn.ReLU(inplace=True),
-                                        nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True)))
+                                        self.upsample))
         self.dec_asr.append(nn.Sequential(nn.Conv2d(512, 128, 3, padding=1, bias=False),
                                         nn.GroupNorm(n_group, 128),
                                         nn.ReLU(inplace=True),
-                                        nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True)))
+                                        self.upsample))
         self.dec_asr.append(nn.Sequential(nn.Conv2d(256, 64, 3, padding=1, bias=False),
                                         nn.GroupNorm(n_group, 64),
                                         nn.ReLU(inplace=True),
-                                        nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True)))
+                                        self.upsample))
 
         self.dec_asr.append(nn.Sequential(nn.Conv2d(128, 64, 3, padding=1, bias=False),
                                         nn.GroupNorm(n_group, 64),
@@ -60,7 +64,7 @@ class UNet_multi(nn.Module):
         self.dec_asr.append(nn.Sequential(nn.Conv2d(64, 32, 3, padding=1, bias=False),
                                         nn.GroupNorm(n_group, 32),
                                         nn.ReLU(inplace=True),
-                                        nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True)))
+                                        self.upsample))
         self.dec_asr.append(nn.Conv2d(32, 5, 3, padding=1, bias=True))
 
 
@@ -68,15 +72,15 @@ class UNet_multi(nn.Module):
         self.dec_n.append(nn.Sequential(nn.Conv2d(1024, 256, 3, padding=1, bias=False),
                                         nn.GroupNorm(n_group, 256),
                                         nn.ReLU(inplace=True),
-                                        nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True)))
+                                        self.upsample))
         self.dec_n.append(nn.Sequential(nn.Conv2d(512, 128, 3, padding=1, bias=False),
                                         nn.GroupNorm(n_group, 128),
                                         nn.ReLU(inplace=True),
-                                        nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True)))
+                                        self.upsample))
         self.dec_n.append(nn.Sequential(nn.Conv2d(256, 64, 3, padding=1, bias=False),
                                         nn.GroupNorm(n_group, 64),
                                         nn.ReLU(inplace=True),
-                                        nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True)))
+                                        self.upsample))
 
         self.dec_n.append(nn.Sequential(nn.Conv2d(128, 64, 3, padding=1, bias=False),
                                         nn.GroupNorm(n_group, 64),
@@ -84,7 +88,7 @@ class UNet_multi(nn.Module):
         self.dec_n.append(nn.Sequential(nn.Conv2d(64, 32, 3, padding=1, bias=False),
                                         nn.GroupNorm(n_group, 32),
                                         nn.ReLU(inplace=True),
-                                        nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True)))
+                                        self.upsample))
         self.dec_n.append(nn.Conv2d(32, 3, 3, padding=1, bias=True))
 
 

@@ -19,7 +19,7 @@ class UNet(nn.Module):
 
         self.enc = nn.ModuleList([])
         for i in range(n_layer):
-            self.enc.append(nn.Sequential(nn.AvgPool2d(kernel_size=2, stride=2),
+            self.enc.append(nn.Sequential(self.avgpool,
                                           nn.Conv2d(list_ch[i], list_ch[i+1], 3, padding=1, bias=False),
                                           nn.GroupNorm(n_group, list_ch[i+1]),
                                           nn.ReLU(inplace=True)))
