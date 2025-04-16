@@ -165,39 +165,44 @@ class EvalReal:
             depth_norm_pred = depth_norm_pred - torch.median(depth_norm_pred[mask==1]) + (self.opts.camera_distance - self.opts.d_all_min) / (self.opts.d_all_max - self.opts.d_all_min)
             depth_pred = (self.opts.d_all_max - self.opts.d_all_min) * depth_norm_pred + self.opts.d_all_min
             
-            intrinsics_save_dir = '%s/intrinsics' % out_dir
-            os.makedirs(intrinsics_save_dir, exist_ok=True)
-            cv2.imwrite('%s/albedo.png' % intrinsics_save_dir, utils.torch2np(255 * utils.lrgb2srgb(utils.clip_img(albedo_pred,mask)[0][0,[2,1,0]].permute(1,2,0))))
-            cv2.imwrite('%s/normal.png' % intrinsics_save_dir, utils.torch2np(255 * utils.clip_img(mask*0.5*(normal_pred+1),mask)[0][0,[2,1,0]].permute(1,2,0)))
-            cv2.imwrite('%s/specular.png' % intrinsics_save_dir, utils.torch2np(255 * utils.clip_img(specular_pred,mask)[0][0,0]))
-            cv2.imwrite('%s/roughness.png' % intrinsics_save_dir, utils.torch2np(255 * utils.clip_img(roughness_pred,mask)[0][0,0]))
-            cv2.imwrite('%s/depth.png' % intrinsics_save_dir, cv2.applyColorMap((255 * utils.torch2np(utils.clip_img(mask*depth_norm_pred,mask)[0][0,0])).astype(np.uint8),cv2.COLORMAP_INFERNO))
+            if self.opts.output_intrinsics_and_shading:
+                intrinsics_save_dir = '%s/intrinsics' % out_dir
+                os.makedirs(intrinsics_save_dir, exist_ok=True)
+                cv2.imwrite('%s/albedo.png' % intrinsics_save_dir, utils.torch2np(255 * utils.lrgb2srgb(utils.clip_img(albedo_pred,mask)[0][0,[2,1,0]].permute(1,2,0))))
+                cv2.imwrite('%s/normal.png' % intrinsics_save_dir, utils.torch2np(255 * utils.clip_img(mask*0.5*(normal_pred+1),mask)[0][0,[2,1,0]].permute(1,2,0)))
+                cv2.imwrite('%s/specular.png' % intrinsics_save_dir, utils.torch2np(255 * utils.clip_img(specular_pred,mask)[0][0,0]))
+                cv2.imwrite('%s/roughness.png' % intrinsics_save_dir, utils.torch2np(255 * utils.clip_img(roughness_pred,mask)[0][0,0]))
+                cv2.imwrite('%s/depth.png' % intrinsics_save_dir, cv2.applyColorMap((255 * utils.torch2np(utils.clip_img(mask*depth_norm_pred,mask)[0][0,0])).astype(np.uint8),cv2.COLORMAP_INFERNO))
 
-            '''
-            reconstruction
-            '''
-            dict_recon = self.recon(mask, albedo_pred, normal_pred, specular_pred, roughness_pred, depth_pred, depth_norm_pred, source_als_pred)
 
-            recon_save_dir = '%s/recon' % out_dir
-            os.makedirs(recon_save_dir, exist_ok=True)
-            cv2.imwrite('%s/source_diffuse_shading_wo_shadow.png' % recon_save_dir,
-                        utils.torch2np(255 * utils.lrgb2srgb(utils.clip_img(dict_recon['source_diffuse_shading_wo_shadow_pred'],mask)[0][0,[2,1,0]].permute(1,2,0).clamp(0,1))))
-            cv2.imwrite('%s/source_specular_shading_wo_shadow.png' % recon_save_dir,
-                        utils.torch2np(255 * utils.lrgb2srgb(utils.clip_img(dict_recon['source_specular_shading_wo_shadow_pred'],mask)[0][0,[2,1,0]].permute(1,2,0).clamp(0,1))))
-            cv2.imwrite('%s/source_diffuse_shading_w_shadow.png' % recon_save_dir,
-                        utils.torch2np(255 * utils.lrgb2srgb(utils.clip_img(dict_recon['source_diffuse_shading_w_shadow_pred'],mask)[0][0,[2,1,0]].permute(1,2,0).clamp(0,1))))
-            cv2.imwrite('%s/source_specular_shading_w_shadow.png' % recon_save_dir,
-                        utils.torch2np(255 * utils.lrgb2srgb(utils.clip_img(dict_recon['source_specular_shading_w_shadow_pred'],mask)[0][0,[2,1,0]].permute(1,2,0).clamp(0,1))))
 
-            cv2.imwrite('%s/source_rendering_wo_shadow_wo_specular.png' % recon_save_dir,
-                        utils.torch2np(255 * utils.lrgb2srgb(utils.clip_img(dict_recon['source_rendering_wo_shadow_wo_specular_pred'],mask)[0][0,[2,1,0]].permute(1,2,0).clamp(0,1))))
-            cv2.imwrite('%s/source_rendering_w_shadow_wo_specular.png' % recon_save_dir,
-                        utils.torch2np(255 * utils.lrgb2srgb(utils.clip_img(dict_recon['source_rendering_w_shadow_wo_specular_pred'],mask)[0][0,[2,1,0]].permute(1,2,0).clamp(0,1))))
-            cv2.imwrite('%s/source_rendering_wo_shadow_w_specular.png' % recon_save_dir,
-                        utils.torch2np(255 * utils.lrgb2srgb(utils.clip_img(dict_recon['source_rendering_wo_shadow_w_specular_pred'],mask)[0][0,[2,1,0]].permute(1,2,0).clamp(0,1))))
-            cv2.imwrite('%s/source_rendering_w_shadow_w_specular.png' % recon_save_dir,
-                        utils.torch2np(255 * utils.lrgb2srgb(utils.clip_img(dict_recon['source_rendering_w_shadow_w_specular_pred'],mask)[0][0,[2,1,0]].permute(1,2,0).clamp(0,1))))
-            
+            if self.opts.output_intrinsics_and_shading:
+                '''
+                reconstruction
+                '''
+                recon_save_dir = '%s/recon' % out_dir
+                os.makedirs(recon_save_dir, exist_ok=True)
+
+                dict_recon = self.recon(mask, albedo_pred, normal_pred, specular_pred, roughness_pred, depth_pred, depth_norm_pred, source_als_pred)
+
+                cv2.imwrite('%s/source_diffuse_shading_wo_shadow.png' % recon_save_dir,
+                            utils.torch2np(255 * utils.lrgb2srgb(utils.clip_img(dict_recon['source_diffuse_shading_wo_shadow_pred'],mask)[0][0,[2,1,0]].permute(1,2,0).clamp(0,1))))
+                cv2.imwrite('%s/source_specular_shading_wo_shadow.png' % recon_save_dir,
+                            utils.torch2np(255 * utils.lrgb2srgb(utils.clip_img(dict_recon['source_specular_shading_wo_shadow_pred'],mask)[0][0,[2,1,0]].permute(1,2,0).clamp(0,1))))
+                cv2.imwrite('%s/source_diffuse_shading_w_shadow.png' % recon_save_dir,
+                            utils.torch2np(255 * utils.lrgb2srgb(utils.clip_img(dict_recon['source_diffuse_shading_w_shadow_pred'],mask)[0][0,[2,1,0]].permute(1,2,0).clamp(0,1))))
+                cv2.imwrite('%s/source_specular_shading_w_shadow.png' % recon_save_dir,
+                            utils.torch2np(255 * utils.lrgb2srgb(utils.clip_img(dict_recon['source_specular_shading_w_shadow_pred'],mask)[0][0,[2,1,0]].permute(1,2,0).clamp(0,1))))
+
+                cv2.imwrite('%s/source_rendering_wo_shadow_wo_specular.png' % recon_save_dir,
+                            utils.torch2np(255 * utils.lrgb2srgb(utils.clip_img(dict_recon['source_rendering_wo_shadow_wo_specular_pred'],mask)[0][0,[2,1,0]].permute(1,2,0).clamp(0,1))))
+                cv2.imwrite('%s/source_rendering_w_shadow_wo_specular.png' % recon_save_dir,
+                            utils.torch2np(255 * utils.lrgb2srgb(utils.clip_img(dict_recon['source_rendering_w_shadow_wo_specular_pred'],mask)[0][0,[2,1,0]].permute(1,2,0).clamp(0,1))))
+                cv2.imwrite('%s/source_rendering_wo_shadow_w_specular.png' % recon_save_dir,
+                            utils.torch2np(255 * utils.lrgb2srgb(utils.clip_img(dict_recon['source_rendering_wo_shadow_w_specular_pred'],mask)[0][0,[2,1,0]].permute(1,2,0).clamp(0,1))))
+                cv2.imwrite('%s/source_rendering_w_shadow_w_specular.png' % recon_save_dir,
+                            utils.torch2np(255 * utils.lrgb2srgb(utils.clip_img(dict_recon['source_rendering_w_shadow_w_specular_pred'],mask)[0][0,[2,1,0]].permute(1,2,0).clamp(0,1))))
+                
 
             print('Relighting')
             for als_path in self.als_paths:
@@ -214,29 +219,30 @@ class EvalReal:
                     relighting
                     '''
                     dict_relit = self.relit(mask, albedo_pred, normal_pred, specular_pred, roughness_pred, depth_pred, depth_norm_pred, target_als_rot)
+                    
+                    if self.opts.output_intrinsics_and_shading:
+                        cv2.imwrite('%s/target_diffuse_shading_w_hardshadow__%03d.png' % (relit_save_dir,i_frame),
+                                    utils.torch2np(255 * utils.lrgb2srgb(utils.clip_img(dict_relit['target_diffuse_shading_w_hardshadow_pred'],mask)[0][0,[2,1,0]].permute(1,2,0).clamp(0,1))))
+                        cv2.imwrite('%s/target_diffuse_shading_w_softshadow__%03d.png' % (relit_save_dir,i_frame),
+                                    utils.torch2np(255 * utils.lrgb2srgb(utils.clip_img(dict_relit['target_diffuse_shading_w_softshadow_pred'],mask)[0][0,[2,1,0]].permute(1,2,0).clamp(0,1))))
 
-                    cv2.imwrite('%s/target_diffuse_shading_w_hardshadow__%03d.png' % (relit_save_dir,i_frame),
-                                utils.torch2np(255 * utils.lrgb2srgb(utils.clip_img(dict_relit['target_diffuse_shading_w_hardshadow_pred'],mask)[0][0,[2,1,0]].permute(1,2,0).clamp(0,1))))
-                    cv2.imwrite('%s/target_diffuse_shading_w_softshadow__%03d.png' % (relit_save_dir,i_frame),
-                                utils.torch2np(255 * utils.lrgb2srgb(utils.clip_img(dict_relit['target_diffuse_shading_w_softshadow_pred'],mask)[0][0,[2,1,0]].permute(1,2,0).clamp(0,1))))
 
+                        cv2.imwrite('%s/target_diffuse_shading_wo_shadow__%03d.png' % (relit_save_dir,i_frame),
+                                    utils.torch2np(255 * utils.lrgb2srgb(utils.clip_img(dict_relit['target_diffuse_shading_wo_shadow_pred'],mask)[0][0,[2,1,0]].permute(1,2,0).clamp(0,1))))
+                        cv2.imwrite('%s/target_specular_shading_wo_shadow__%03d.png' % (relit_save_dir,i_frame),
+                                    utils.torch2np(255 * utils.lrgb2srgb(utils.clip_img(dict_relit['target_specular_shading_wo_shadow_pred'],mask)[0][0,[2,1,0]].permute(1,2,0).clamp(0,1))))
+                        cv2.imwrite('%s/target_diffuse_shading_w_shadow__%03d.png' % (relit_save_dir,i_frame),
+                                    utils.torch2np(255 * utils.lrgb2srgb(utils.clip_img(dict_relit['target_diffuse_shading_w_shadow_pred'],mask)[0][0,[2,1,0]].permute(1,2,0).clamp(0,1))))
+                        cv2.imwrite('%s/target_specular_shading_w_shadow__%03d.png' % (relit_save_dir,i_frame),
+                                    utils.torch2np(255 * utils.lrgb2srgb(utils.clip_img(dict_relit['target_specular_shading_w_shadow_pred'],mask)[0][0,[2,1,0]].permute(1,2,0).clamp(0,1))))
 
-                    cv2.imwrite('%s/target_diffuse_shading_wo_shadow__%03d.png' % (relit_save_dir,i_frame),
-                                utils.torch2np(255 * utils.lrgb2srgb(utils.clip_img(dict_relit['target_diffuse_shading_wo_shadow_pred'],mask)[0][0,[2,1,0]].permute(1,2,0).clamp(0,1))))
-                    cv2.imwrite('%s/target_specular_shading_wo_shadow__%03d.png' % (relit_save_dir,i_frame),
-                                utils.torch2np(255 * utils.lrgb2srgb(utils.clip_img(dict_relit['target_specular_shading_wo_shadow_pred'],mask)[0][0,[2,1,0]].permute(1,2,0).clamp(0,1))))
-                    cv2.imwrite('%s/target_diffuse_shading_w_shadow__%03d.png' % (relit_save_dir,i_frame),
-                                utils.torch2np(255 * utils.lrgb2srgb(utils.clip_img(dict_relit['target_diffuse_shading_w_shadow_pred'],mask)[0][0,[2,1,0]].permute(1,2,0).clamp(0,1))))
-                    cv2.imwrite('%s/target_specular_shading_w_shadow__%03d.png' % (relit_save_dir,i_frame),
-                                utils.torch2np(255 * utils.lrgb2srgb(utils.clip_img(dict_relit['target_specular_shading_w_shadow_pred'],mask)[0][0,[2,1,0]].permute(1,2,0).clamp(0,1))))
-
-                    cv2.imwrite('%s/target_rendering_wo_shadow_wo_specular__%03d.png' % (relit_save_dir,i_frame),
-                                utils.torch2np(255 * utils.lrgb2srgb(utils.clip_img(dict_relit['target_rendering_wo_shadow_wo_specular_pred'],mask)[0][0,[2,1,0]].permute(1,2,0).clamp(0,1))))
-                    cv2.imwrite('%s/target_rendering_w_shadow_wo_specular__%03d.png' % (relit_save_dir,i_frame),
-                                utils.torch2np(255 * utils.lrgb2srgb(utils.clip_img(dict_relit['target_rendering_w_shadow_wo_specular_pred'],mask)[0][0,[2,1,0]].permute(1,2,0).clamp(0,1))))
-                    cv2.imwrite('%s/target_rendering_wo_shadow_w_specular__%03d.png' % (relit_save_dir,i_frame),
-                                utils.torch2np(255 * utils.lrgb2srgb(utils.clip_img(dict_relit['target_rendering_wo_shadow_w_specular_pred'],mask)[0][0,[2,1,0]].permute(1,2,0).clamp(0,1))))
-                                
+                        cv2.imwrite('%s/target_rendering_wo_shadow_wo_specular__%03d.png' % (relit_save_dir,i_frame),
+                                    utils.torch2np(255 * utils.lrgb2srgb(utils.clip_img(dict_relit['target_rendering_wo_shadow_wo_specular_pred'],mask)[0][0,[2,1,0]].permute(1,2,0).clamp(0,1))))
+                        cv2.imwrite('%s/target_rendering_w_shadow_wo_specular__%03d.png' % (relit_save_dir,i_frame),
+                                    utils.torch2np(255 * utils.lrgb2srgb(utils.clip_img(dict_relit['target_rendering_w_shadow_wo_specular_pred'],mask)[0][0,[2,1,0]].permute(1,2,0).clamp(0,1))))
+                        cv2.imwrite('%s/target_rendering_wo_shadow_w_specular__%03d.png' % (relit_save_dir,i_frame),
+                                    utils.torch2np(255 * utils.lrgb2srgb(utils.clip_img(dict_relit['target_rendering_wo_shadow_w_specular_pred'],mask)[0][0,[2,1,0]].permute(1,2,0).clamp(0,1))))
+                                    
                     cv2.imwrite('%s/target_rendering_w_shadow_w_specular__%03d.png' % (relit_save_dir,i_frame),
                                 utils.torch2np(255 * utils.lrgb2srgb(utils.clip_img(dict_relit['target_rendering_w_shadow_w_specular_pred'],mask)[0][0,[2,1,0]].permute(1,2,0).clamp(0,1))))
                 
@@ -270,6 +276,7 @@ def main():
     parser.add_argument('--n_light', default=16, type=int)
     parser.add_argument('--n_frame', default=120, type=int)
     parser.add_argument('--fps', default=24, type=float)
+    parser.add_argument('--output_intrinsics_and_shading', action='store_true')
     opts = parser.parse_args()
 
     torch.backends.cudnn.benchmark = True
