@@ -19,9 +19,18 @@ class TrainDepth:
         os.makedirs(self.opts.out_dir, exist_ok=True)
 
         self.net = UNet(self.opts,in_channels=4,out_channels=1).to(self.opts.device)
+        if self.opts.checkpoint_path is not None:
+            self.net.load_state_dict(torch.load(self.opts.checkpoint_path)['model_state_dict'])
+        
         self.optimizer = torch.optim.Adam(self.net.parameters(), lr=self.opts.lr_max)
-        self.scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(self.optimizer, T_max=self.opts.t_max, eta_min=self.opts.lr_min)
+        if self.opts.checkpoint_path is not None:
+            self.optimizer.load_state_dict(torch.load(self.opts.checkpoint_path)['optimizer_state_dict'])
 
+        self.scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(self.optimizer, T_max=self.opts.t_max, eta_min=self.opts.lr_min)
+        if self.opts.checkpoint_path is not None:
+            self.scheduler.load_state_dict(torch.load(self.opts.checkpoint_path)['scheduler_state_dict'])
+
+            
         g = torch.Generator()
         g.manual_seed(self.opts.seed)
         self.train_dataset = ImagesDataset(opts=self.opts,train_or_val='train',id='depth')
@@ -168,6 +177,7 @@ def main():
     parser.add_argument('--eps', default=1e-6, type=float)
     parser.add_argument('--use_other_dataset', action='store_true')
     parser.add_argument('--other_dataset_dir', default=None)
+    parser.add_argument('--checkpoint_path', default=None)
     opts = parser.parse_args()
 
     np.random.seed(opts.seed)
