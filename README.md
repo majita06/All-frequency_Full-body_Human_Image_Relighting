@@ -4,7 +4,7 @@
 
 This code is our implementation of the following paper:
 
-Daichi Tajima, Yoshihiro Kanamori, Yuki Endo: "All-frequency Full-body Human Image Relighting," Computer Graphics Forum (Proc. of Eurographics 2025), 2025. [[Project]](https://www.cgg.cs.tsukuba.ac.jp/~tajima/pub/all-frequency_full-body_human_image_relighting/)[[PDF]](https://arxiv.org/abs/2411.00356)
+Daichi Tajima, Yoshihiro Kanamori, Yuki Endo: "All-frequency Full-body Human Image Relighting," Computer Graphics Forum (Proc. of Eurographics 2025), 2025. [[Project]](https://www.cgg.cs.tsukuba.ac.jp/~tajima/pub/all-frequency_full-body_human_image_relighting/index.html)[[PDF]](https://arxiv.org/abs/2411.00356)
 
 # Getting Started
 
