@@ -106,11 +106,11 @@ def get_env_normal(h,w,device='cuda'):
     output shape: [1,3,h,w]
     '''
 
-    w_repeat = torch.tile(torch.arange(0,w,1)[None,None,None,:],(1,1,h,1)) + 1/2 #[0.5,...,w-0.5]を縦に伸ばす
-    h_repeat = torch.tile(torch.arange(0,h,1)[None,None,:,None],(1,1,1,w)) + 1/2 #[0.5,...,h-0.5]を横に伸ばす
+    w_repeat = torch.tile(torch.arange(0,w,1)[None,None,None,:],(1,1,h,1)) + 1/2
+    h_repeat = torch.tile(torch.arange(0,h,1)[None,None,:,None],(1,1,1,w)) + 1/2
 
-    phi = np.pi/2 * (2*h_repeat/h - 1) #[pi/2 * (1/h - 1), pi/2 * ((2h-1)/h - 1)] #[-90,+90]
-    theta = np.pi * (2*w_repeat/w - 1) # [-180,180]
+    phi = np.pi/2 * (2*h_repeat/h - 1)
+    theta = np.pi * (2*w_repeat/w - 1)
 
     normal_x = torch.cos(phi) * torch.cos(theta)
     normal_y = torch.sin(phi)
@@ -122,9 +122,9 @@ def mapping_als(env, als, circle_size_min=0.001, circle_size_max=0.3, circle_edg
     '''
     env shape: [1,3,h,w]
     als shape: [1,n_light,7] (direction(3), sigma(1), intensity(3))
-    circle_size_min: sigma が最も小さい箇所での 円のサイズ [0,2]
-    circle_size_max: sigma が最も大きい箇所での 円のサイズ [0,2]
-    circle_edge_size: 円のエッジのサイズ
+    circle_size_min: the size of the circle when sigma is the smallest [0~2]
+    circle_size_max: the size of the circle when sigma is the largest [0~2]
+    circle_edge_size: the size of the edge of the circle
     
     output: numpy array
         shape: [h,w,3]
