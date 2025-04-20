@@ -4,7 +4,7 @@ import torch
 
 
 class UNet_multi(nn.Module):
-    def __init__(self, opts, in_channels, n_group=16):
+    def __init__(self, opts, in_channel=4, n_group=16):
         super(UNet_multi, self).__init__()
         self.opts = opts
         self.avgpool = nn.AvgPool2d(kernel_size=2, stride=2)
@@ -12,93 +12,92 @@ class UNet_multi(nn.Module):
 
         self.enc = nn.ModuleList([])
 
-        
-        self.enc.append(nn.Sequential(nn.Conv2d(in_channels, 32, 3, padding=1, bias=False),
-                                   nn.GroupNorm(n_group, 32),
+        list_ch = [32,64,128,256,512]
+        self.bottleneck_ch = [512,256,128]
+
+        self.enc.append(nn.Sequential(nn.Conv2d(in_channel, list_ch[0], 3, padding=1, bias=False),
+                                   nn.GroupNorm(n_group, list_ch[0]),
                                    nn.ReLU(inplace=True)))
 
         self.enc.append(nn.Sequential(self.avgpool,
-                                        nn.Conv2d(32, 64, 3, padding=1, bias=False),
-                                        nn.GroupNorm(n_group, 64),
+                                        nn.Conv2d(list_ch[0], list_ch[1], 3, padding=1, bias=False),
+                                        nn.GroupNorm(n_group, list_ch[1]),
                                         nn.ReLU(inplace=True)))
         self.enc.append(nn.Sequential(self.avgpool,
-                                        nn.Conv2d(64, 128, 3, padding=1, bias=False),
-                                        nn.GroupNorm(n_group, 128),
+                                        nn.Conv2d(list_ch[1], list_ch[2], 3, padding=1, bias=False),
+                                        nn.GroupNorm(n_group, list_ch[2]),
                                         nn.ReLU(inplace=True)))
         self.enc.append(nn.Sequential(self.avgpool,
-                                        nn.Conv2d(128, 256, 3, padding=1, bias=False),
-                                        nn.GroupNorm(n_group, 256),
+                                        nn.Conv2d(list_ch[2], list_ch[3], 3, padding=1, bias=False),
+                                        nn.GroupNorm(n_group, list_ch[3]),
                                         nn.ReLU(inplace=True)))
         self.enc.append(nn.Sequential(self.avgpool,
-                                        nn.Conv2d(256, 512, 3, padding=1, bias=False),
-                                        nn.GroupNorm(n_group, 512),
+                                        nn.Conv2d(list_ch[3], list_ch[4], 3, padding=1, bias=False),
+                                        nn.GroupNorm(n_group, list_ch[4]),
                                         nn.ReLU(inplace=True)))
         
         
         self.mid = nn.ModuleList([])
-        self.mid.append(nn.Sequential(nn.Conv2d(512, 512, 3, padding=1, bias=False),
-                                nn.GroupNorm(n_group, 512),
+        self.mid.append(nn.Sequential(nn.Conv2d(list_ch[4], list_ch[4], 3, padding=1, bias=False),
+                                nn.GroupNorm(n_group, list_ch[4]),
                                 nn.ReLU(inplace=False)))
-        self.mid.append(nn.Sequential(nn.Conv2d(512, 1024, 3, padding=1, bias=False),
-                                nn.GroupNorm(n_group, 1024),
+        self.mid.append(nn.Sequential(nn.Conv2d(list_ch[4], self.bottleneck_ch[0]+self.bottleneck_ch[1]+self.bottleneck_ch[2], 3, padding=1, bias=False),
+                                nn.GroupNorm(n_group, self.bottleneck_ch[0]+self.bottleneck_ch[1]+self.bottleneck_ch[2]),
                                 nn.ReLU(inplace=False)))
 
 
         self.dec_asr = nn.ModuleList([])
-        self.dec_asr.append(nn.Sequential(nn.Conv2d(1024, 256, 3, padding=1, bias=False),
-                                        nn.GroupNorm(n_group, 256),
+        self.dec_asr.append(nn.Sequential(nn.Conv2d(self.bottleneck_ch[0], list_ch[3], 3, padding=1, bias=False),
+                                        nn.GroupNorm(n_group, list_ch[3]),
                                         nn.ReLU(inplace=True),
                                         self.upsample))
-        self.dec_asr.append(nn.Sequential(nn.Conv2d(512, 128, 3, padding=1, bias=False),
-                                        nn.GroupNorm(n_group, 128),
+        self.dec_asr.append(nn.Sequential(nn.Conv2d(2*list_ch[3], list_ch[2], 3, padding=1, bias=False),
+                                        nn.GroupNorm(n_group, list_ch[2]),
                                         nn.ReLU(inplace=True),
                                         self.upsample))
-        self.dec_asr.append(nn.Sequential(nn.Conv2d(256, 64, 3, padding=1, bias=False),
-                                        nn.GroupNorm(n_group, 64),
+        self.dec_asr.append(nn.Sequential(nn.Conv2d(2*list_ch[2], list_ch[1], 3, padding=1, bias=False),
+                                        nn.GroupNorm(n_group, list_ch[1]),
                                         nn.ReLU(inplace=True),
                                         self.upsample))
 
-        self.dec_asr.append(nn.Sequential(nn.Conv2d(128, 64, 3, padding=1, bias=False),
-                                        nn.GroupNorm(n_group, 64),
+        self.dec_asr.append(nn.Sequential(nn.Conv2d(list_ch[2], list_ch[1], 3, padding=1, bias=False),
+                                        nn.GroupNorm(n_group, list_ch[1]),
                                         nn.ReLU(inplace=True)))
-        self.dec_asr.append(nn.Sequential(nn.Conv2d(64, 32, 3, padding=1, bias=False),
-                                        nn.GroupNorm(n_group, 32),
+        self.dec_asr.append(nn.Sequential(nn.Conv2d(list_ch[1], list_ch[0], 3, padding=1, bias=False),
+                                        nn.GroupNorm(n_group, list_ch[0]),
                                         nn.ReLU(inplace=True),
                                         self.upsample))
-        self.dec_asr.append(nn.Conv2d(32, 5, 3, padding=1, bias=True))
+        self.dec_asr.append(nn.Conv2d(list_ch[0], 5, 3, padding=1, bias=True))
 
 
         self.dec_n = nn.ModuleList([])
-        self.dec_n.append(nn.Sequential(nn.Conv2d(1024, 256, 3, padding=1, bias=False),
-                                        nn.GroupNorm(n_group, 256),
+        self.dec_n.append(nn.Sequential(nn.Conv2d(self.bottleneck_ch[1], list_ch[3], 3, padding=1, bias=False),
+                                        nn.GroupNorm(n_group, list_ch[3]),
                                         nn.ReLU(inplace=True),
                                         self.upsample))
-        self.dec_n.append(nn.Sequential(nn.Conv2d(512, 128, 3, padding=1, bias=False),
-                                        nn.GroupNorm(n_group, 128),
+        self.dec_n.append(nn.Sequential(nn.Conv2d(2*list_ch[3], list_ch[2], 3, padding=1, bias=False),
+                                        nn.GroupNorm(n_group, list_ch[2]),
                                         nn.ReLU(inplace=True),
                                         self.upsample))
-        self.dec_n.append(nn.Sequential(nn.Conv2d(256, 64, 3, padding=1, bias=False),
-                                        nn.GroupNorm(n_group, 64),
+        self.dec_n.append(nn.Sequential(nn.Conv2d(2*list_ch[2], list_ch[1], 3, padding=1, bias=False),
+                                        nn.GroupNorm(n_group, list_ch[1]),
                                         nn.ReLU(inplace=True),
                                         self.upsample))
 
-        self.dec_n.append(nn.Sequential(nn.Conv2d(128, 64, 3, padding=1, bias=False),
-                                        nn.GroupNorm(n_group, 64),
+        self.dec_n.append(nn.Sequential(nn.Conv2d(list_ch[2], list_ch[1], 3, padding=1, bias=False),
+                                        nn.GroupNorm(n_group, list_ch[1]),
                                         nn.ReLU(inplace=True)))
-        self.dec_n.append(nn.Sequential(nn.Conv2d(64, 32, 3, padding=1, bias=False),
-                                        nn.GroupNorm(n_group, 32),
+        self.dec_n.append(nn.Sequential(nn.Conv2d(list_ch[1], list_ch[0], 3, padding=1, bias=False),
+                                        nn.GroupNorm(n_group, list_ch[0]),
                                         nn.ReLU(inplace=True),
                                         self.upsample))
-        self.dec_n.append(nn.Conv2d(32, 3, 3, padding=1, bias=True))
+        self.dec_n.append(nn.Conv2d(list_ch[0], 3, 3, padding=1, bias=True))
 
 
         self.dec_als = nn.ModuleList([])
-        self.dec_als.append(nn.Sequential(nn.Conv2d(1024, 256, 1, padding=0, bias=False),
-                                        nn.GroupNorm(n_group, 256),
+        self.dec_als.append(nn.Sequential(nn.Conv2d(self.bottleneck_ch[2], 1, 1, padding=0, bias=True),
                                         nn.ReLU(inplace=True)))
-        self.dec_als.append(nn.Sequential(nn.Conv2d(256, 1, 1, padding=0, bias=True),
-                                        nn.ReLU(inplace=True)))
-        self.dec_als.append(nn.Linear(64*64, self.opts.n_light*7))
+        self.dec_als.append(nn.Linear((self.opts.resolution // 2**(len(list_ch)-1))**2, self.opts.n_light*7))
 
     def forward(self, c0):
         c0 = self.enc[0](c0)#->32,1024^2
@@ -108,11 +107,11 @@ class UNet_multi(nn.Module):
         c3 = self.enc[4](c2)#->512,64^2
 
         
-        m = c3 + self.mid[0](c3)#->512,64^29ij
-        m = self.mid[1](m) #->1024,64^2
+        m = c3 + self.mid[0](c3)#->512,64^2
+        m = self.mid[1](m) #->896,64^2
 
 
-        dc_asr = self.dec_asr[0](m)#1024,64^2->256,128^2
+        dc_asr = self.dec_asr[0](m[:,0:self.bottleneck_ch[0]])#512,64^2->256,128^2
         dc_asr = self.dec_asr[1](torch.cat([c2, dc_asr], 1))#512,128^2->128,256^2
         dc_asr = self.dec_asr[2](torch.cat([c1, dc_asr], 1))#256,256^2->64,512^2
         dc_asr = self.dec_asr[3](torch.cat([c0, dc_asr], 1)) #128,512^2->64,512^2
@@ -120,7 +119,7 @@ class UNet_multi(nn.Module):
         dc_asr = self.dec_asr[5](dc_asr) #32,1024^2->5,1024^2
         dc_asr = torch.sigmoid(dc_asr)
 
-        dc_n = self.dec_n[0](m)#1024,64^2->256,128^2
+        dc_n = self.dec_n[0](m[:,self.bottleneck_ch[0]:self.bottleneck_ch[0]+self.bottleneck_ch[1]])#256,64^2->256,128^2
         dc_n = self.dec_n[1](torch.cat([c2, dc_n], 1))#512,128^2->128,256^2
         dc_n = self.dec_n[2](torch.cat([c1, dc_n], 1))#256,256^2->64,512^2
         dc_n = self.dec_n[3](torch.cat([c0, dc_n], 1)) #128,512^2->64,512^2
@@ -128,9 +127,8 @@ class UNet_multi(nn.Module):
         dc_n = self.dec_n[5](dc_n) #32,1024^2->5,1024^2
         dc_n = F.normalize(dc_n, dim=1) 
 
-        dc_als = self.dec_als[0](m)#1024,64^2->256,64^2
-        dc_als = self.dec_als[1](dc_als)#256,64^2->1,64^2
-        dc_als = self.dec_als[2](dc_als.view(self.opts.batch_size,-1))#1,64^2->[b,64^2]->[b,n_light*7]
+        dc_als = self.dec_als[0](m[:,self.bottleneck_ch[0]+self.bottleneck_ch[1]:self.bottleneck_ch[0]+self.bottleneck_ch[1]+self.bottleneck_ch[2]])#128,64^2->1,64^2
+        dc_als = self.dec_als[1](dc_als.view(self.opts.batch_size,-1))#1,64^2->[b,64^2]->[b,n_light*7]
         dc_als = dc_als.view(self.opts.batch_size,self.opts.n_light,7)#[b,n_light*7]->[b,n_light,7]
         dc_als = torch.cat([F.normalize(dc_als[:,:,0:3], dim=2),
                             self.opts.range_sigma * torch.sigmoid(dc_als[:,:,3:4]),

@@ -1,3 +1,6 @@
+import sys
+sys.path.append(".")
+sys.path.append("..")
 import os
 from argparse import ArgumentParser
 from tqdm import tqdm
@@ -11,14 +14,19 @@ from models.unet import UNet
 from utils import utils, metrics
 import cv2
 import random
-from losses.gradient_loss import Gradient_loss
+from losses.gradient_loss import Gradientloss
+import json
 
 class TrainDepth:
     def __init__(self, opts):
         self.opts = opts
         os.makedirs(self.opts.out_dir, exist_ok=True)
 
-        self.net = UNet(self.opts,in_channels=4,out_channels=1).to(self.opts.device)
+        # Save options
+        with open('%s/opt.json' % self.opts.out_dir, 'w') as f:
+            json.dump(vars(self.opts), f, indent=4, sort_keys=True)
+            
+        self.net = UNet(self.opts,in_channel=4,out_channel=1).to(self.opts.device)
         if self.opts.checkpoint_path is not None:
             self.net.load_state_dict(torch.load(self.opts.checkpoint_path)['model_state_dict'])
         
@@ -54,13 +62,13 @@ class TrainDepth:
         self.log_train_path = '%s/log_train.txt' % self.opts.out_dir
         self.log_val_path = '%s/log_val.txt' % self.opts.out_dir
 
-        self.list_loss_name = ['l1_loss_si','grad_loss']
+        self.list_loss_name = ['l2_loss_si','grad_loss']
         self.list_metric_name = ['rmse_w_mask', 'ssim_w_mask']#, 'lpips']
         utils.generate_log_txt(self.log_train_path,['epoch'] + self.list_loss_name)
         utils.generate_log_txt(self.log_val_path,['epoch'] + self.list_metric_name)
 
         #self.lpips = metrics.LPIPS(self.opts).lpips
-        self.gradient_loss = Gradient_loss(self.opts).gradient_loss
+        self.gradient_loss = Gradientloss(self.opts).gradient_loss
 
         self.checkpoint_save_dir = '%s/checkpoints' % self.opts.out_dir
         os.makedirs(self.checkpoint_save_dir, exist_ok=True)
@@ -110,10 +118,14 @@ class TrainDepth:
                             _loss = F.l1_loss(depth_norm_gt, depth_norm_pred)
                             list_log[loss_name].append(_loss.item())
                             loss = loss + _loss
+                        if loss_name == 'l2_loss_si':
+                            _loss = F.mse_loss(depth_norm_gt, depth_norm_pred)
+                            list_log[loss_name].append(_loss.item())
+                            loss = loss + _loss
                         if loss_name == 'grad_loss':
                             _loss = self.gradient_loss(depth_norm_gt, depth_norm_pred)
                             list_log[loss_name].append(_loss.item())
-                            loss = loss + 0.01 * _loss   
+                            loss = loss + 0.01 * _loss
                     loss.backward()
                     self.optimizer.step()
                     
@@ -183,7 +195,8 @@ def main():
     np.random.seed(opts.seed)
     random.seed(opts.seed)
     torch.manual_seed(opts.seed)
-    torch.cuda.manual_seed(opts.seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed(opts.seed)
     torch.backends.cudnn.benchmark = True
     torch.backends.cudnn.deterministic = False
     torch.use_deterministic_algorithms = False
