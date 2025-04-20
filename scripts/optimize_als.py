@@ -1,3 +1,6 @@
+import sys
+sys.path.append(".")
+sys.path.append("..")
 from glob import glob
 import os
 os.environ["OPENCV_IO_ENABLE_OPENEXR"]="True"
@@ -14,11 +17,16 @@ from shaders.lambert import Lambert
 from shaders.disney import Disney
 import kornia
 from losses.repulsive_loss import RepulsiveLoss
+import json
 
 class OptimizeAls:
     def __init__(self, opts):
         self.opts = opts
         os.makedirs(self.opts.out_dir, exist_ok=True)
+        
+        # Save options
+        with open('%s/opt.json' % self.opts.out_dir, 'w') as f:
+            json.dump(vars(self.opts), f, indent=4, sort_keys=True)
 
         self.env_paths = sorted(glob('%s/*/*.hdr' % self.opts.env_dir))[self.opts.start:self.opts.end]
 
@@ -240,7 +248,8 @@ def main():
     np.random.seed(opts.seed)
     random.seed(opts.seed)
     torch.manual_seed(opts.seed)
-    torch.cuda.manual_seed(opts.seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed(opts.seed)
     torch.backends.cudnn.benchmark = True
     torch.backends.cudnn.deterministic = False
     torch.use_deterministic_algorithms = False

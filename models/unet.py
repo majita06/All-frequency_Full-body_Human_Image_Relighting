@@ -4,7 +4,7 @@ import torch
 
 
 class UNet(nn.Module):
-    def __init__(self, opts, in_channels,out_channels,n_layer=4,n_group=16):
+    def __init__(self, opts, in_channel=4, out_channel=1, n_layer=4, n_group=16):
         super(UNet, self).__init__()
         self.n_layer = n_layer
         list_ch = [2**(5+i) for i in range(n_layer+1)]
@@ -13,7 +13,7 @@ class UNet(nn.Module):
         self.upsample = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True)
 
         
-        self.start = nn.Sequential(nn.Conv2d(in_channels, list_ch[0], 3, padding=1, bias=False),
+        self.start = nn.Sequential(nn.Conv2d(in_channel, list_ch[0], 3, padding=1, bias=False),
                                    nn.GroupNorm(n_group, list_ch[0]),
                                    nn.ReLU(inplace=True))
 
@@ -34,7 +34,7 @@ class UNet(nn.Module):
                                           nn.GroupNorm(n_group, list_ch[n_layer-i-1]),
                                           nn.ReLU(inplace=True)))
 
-        self.end = nn.Conv2d(2 * list_ch[0], out_channels, 3, padding=1, bias=True)
+        self.end = nn.Conv2d(2 * list_ch[0], out_channel, 3, padding=1, bias=True)
 
     def forward(self, x):
         x = self.start(x)

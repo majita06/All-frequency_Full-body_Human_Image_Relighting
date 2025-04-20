@@ -4,7 +4,8 @@ import torch.nn.functional as F
 import cv2
 from utils import utils
 import torch.nn as nn
-class Gradient_loss():
+
+class Gradientloss():
     def __init__(self,opts):
         self.opts = opts
         kernel_x = torch.tensor([[0., 0., 0.],

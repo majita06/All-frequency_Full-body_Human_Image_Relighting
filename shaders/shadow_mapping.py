@@ -72,19 +72,18 @@ class ShadowMapping(nn.Module):
         # Convert depth to mesh
         posw, idx = self.depth2mesh(depth,mask)
 
-
         # Convert the mesh to the light source view
         posw_center = torch.matmul(posw,self.local_mat.t()) 
         mv_mat_shadow_light = torch.einsum('xy,dyz->dxz',self.m_dist_mat,self.rotate_xyz_light(als[:,0:3]))
         posw_from_light = torch.einsum('vw,dxw->dvx',posw_center, mv_mat_shadow_light)
         posw_from_light = torch.einsum('dvw,xw->dvx',posw_from_light,self.orth_proj)
 
-
         # z_map: Depth map from light source
-        _z_map, _ = dr.rasterize(self.glctx, posw_from_light.contiguous(), idx, resolution=[self.resolution, self.resolution])
+        _z_map, _ = dr.rasterize(self.glctx, posw_from_light.contiguous().float(), idx, resolution=[self.resolution, self.resolution])
         z_map = 0.5 * (1+_z_map[...,2])
         mask_fromlight = (z_map!=0.5).to(torch.float32)
         z_map[mask_fromlight==0] = 1
+
         # for uv to vertex
         u = (self.resolution * ((posw_from_light[:,:,0]+1)/2)).to(torch.long).clamp(0,self.resolution-1) # batch,i_idx
         v = (self.resolution * ((posw_from_light[:,:,1]+1)/2)).to(torch.long).clamp(0,self.resolution-1)# batch,i_idx
@@ -127,15 +126,14 @@ class ShadowMapping(nn.Module):
 
         
         posw_zm = torch.matmul(posw,self.rot_pi_origin_mat.t())
-        near = -posw_zm[:,2].max().item()
-        far = -posw_zm[:,2].min().item()
-        pers_proj = utils.np2torch(np.array([[self.cot, 0, 0, 0],
-                                        [  0, self.cot, 0, 0],
-                                        [  0,    0, -(far+near)/(far-near), -(2*far*near)/(far-near)],
-                                        [  0,    0,           -1,              0]]),self.opts.device).to(torch.float32)
+        near = -posw_zm[:,2].max().item() - 1e-2
+        far = -posw_zm[:,2].min().item() + 1e-2
+        pers_proj = utils.np2torch(np.array([[self.cot, 0,        0,                      0],
+                                             [0,        self.cot, 0,                      0],
+                                             [0,        0,        -(far+near)/(far-near), -(2*far*near)/(far-near)],
+                                             [0,        0,        -1,                     0]]),  self.opts.device).to(torch.float32)
         posw_fromcamera = torch.matmul(posw_zm,pers_proj.t())[None]
-        depth_fromcamera = dr.rasterize(self.glctx, posw_fromcamera, idx, resolution=[self.resolution, self.resolution])[0]
-
+        depth_fromcamera = dr.rasterize(self.glctx, posw_fromcamera.float(), idx, resolution=[self.resolution, self.resolution])[0]
 
 
         # f and sf are pasted on the mesh viewed from the camera
@@ -283,7 +281,7 @@ class ShadowMapping(nn.Module):
         sigma shape: [1]
         '''
 
-        ts = torch.linspace(-kernel_size // 2, kernel_size // 2 + 1, kernel_size).to(self.opts.device) #ここのサイズが可変
+        ts = torch.linspace(-kernel_size // 2, kernel_size // 2 + 1, kernel_size).to(self.opts.device)
         gauss = torch.exp(-(ts / sigma)**2 / 2)
         if kernel_size == 1:
             kernel = self.ones_scalar

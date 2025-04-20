@@ -1,3 +1,6 @@
+import sys
+sys.path.append(".")
+sys.path.append("..")
 import os
 from argparse import ArgumentParser
 from tqdm import tqdm
@@ -13,13 +16,18 @@ import cv2
 import random
 from shaders.shadow_mapping import ShadowMapping
 from shaders.lambert import Lambert
+import json
 
 class TrainRefineShadow:
     def __init__(self, opts):
         self.opts = opts
         os.makedirs(self.opts.out_dir, exist_ok=True)
 
-        self.net = UNet(self.opts,in_channels=4,out_channels=1,n_layer=3).to(self.opts.device)
+        # Save options
+        with open('%s/opt.json' % self.opts.out_dir, 'w') as f:
+            json.dump(vars(self.opts), f, indent=4, sort_keys=True)
+
+        self.net = UNet(self.opts,in_channel=4,out_channel=1,n_layer=3).to(self.opts.device)
         if self.opts.checkpoint_path is not None:
             self.net.load_state_dict(torch.load(self.opts.checkpoint_path)['model_state_dict'])
         
@@ -124,7 +132,7 @@ class TrainRefineShadow:
                     depth_norm_gt = depth_gt.clone()
                     depth_norm_gt[mask == 0] = float('nan')
                     depth_norm_gt = depth_gt + (self.opts.camera_distance - torch.nanmedian(depth_norm_gt.view(self.opts.batch_size,-1),dim=1)[0][:,None,None,None])
-                    depth_norm_gt = ((depth_norm_gt - self.opts.d_all_min) / (self.opts.d_all_max - self.opts.d_all_min)).clamp(0,1)
+                    depth_norm_gt = ((depth_norm_gt - self.opts.d_all_min) / (self.opts.d_all_max - self.opts.d_all_min))
                 
                 
                     source_refine_shadows = torch.zeros_like(source_hard_shadows)
@@ -241,7 +249,8 @@ def main():
     np.random.seed(opts.seed)
     random.seed(opts.seed)
     torch.manual_seed(opts.seed)
-    torch.cuda.manual_seed(opts.seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed(opts.seed)
     torch.backends.cudnn.benchmark = True
     torch.backends.cudnn.deterministic = False
     torch.use_deterministic_algorithms = False

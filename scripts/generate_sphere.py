@@ -1,10 +1,12 @@
-
+import sys
+sys.path.append(".")
+sys.path.append("..")
 from glob import glob
 import numpy as np
 import os
 import bpy
 from argparse import ArgumentParser
-
+import json
 
 def main():
     parser = ArgumentParser()

@@ -1,3 +1,6 @@
+import sys
+sys.path.append(".")
+sys.path.append("..")
 import os
 from argparse import ArgumentParser
 from tqdm import tqdm
@@ -8,10 +11,17 @@ from utils import utils
 import cv2
 from shaders.shadow_mapping import ShadowMapping
 from glob import glob
+import json
 
 class GenerateShadows:
     def __init__(self, opts):
         self.opts = opts
+        os.makedirs(self.opts.out_dir, exist_ok=True)
+
+        # Save options
+        with open('%s/opt.json' % self.opts.out_dir, 'w') as f:
+            json.dump(vars(self.opts), f, indent=4, sort_keys=True)
+
         self.shadow_mapping = ShadowMapping(self.opts,resolution=self.opts.resolution)
 
         self.human_dirs_1 = sorted(glob('%s/*' % opts.dataset_dir))
@@ -27,7 +37,7 @@ class GenerateShadows:
             human_id = os.path.basename(human_dir)
             mask = utils.np2torch(cv2.imread('%s/mask.png' % human_dir, cv2.IMREAD_GRAYSCALE).astype(np.float32),self.opts.device)[None,None]/255.
             depth_gt = utils.np2torch(cv2.imread('%s/depth.exr' % human_dir, -1).astype(np.float32),self.opts.device)[None,None,...,0]
-            normal_gt = utils.np2torch(cv2.imread('%s/normal.png' % human_dir, -1).astype(np.float32),self.opts.device).permute(2,0,1)[None,[2,1,0]]/255.
+            normal_gt = utils.np2torch(cv2.imread('%s/normal.png' % human_dir, cv2.IMREAD_COLOR).astype(np.float32),self.opts.device).permute(2,0,1)[None,[2,1,0]]/255.
             normal_gt[:,0] = 2.*normal_gt[:,0]-1.
             normal_gt[:,1] = -(2.*normal_gt[:,1]-1.)
             normal_gt = F.normalize(normal_gt,dim=1)
@@ -57,9 +67,9 @@ class GenerateShadows:
                     cv2.imwrite('%s/soft_shadows_%d.png' % (out_dir, i_light),
                                 utils.torch2np(255 * soft_shadows[0,i_light]))
 
-
 def main():
     parser = ArgumentParser()
+    parser.add_argument('--device', default='cuda')
     parser.add_argument('--start', default=0, type=int)
     parser.add_argument('--end', default=99999, type=int)
     parser.add_argument('--out_dir', default=None)
@@ -83,7 +93,8 @@ def main():
     opts = parser.parse_args()
 
     torch.manual_seed(opts.seed)
-    torch.cuda.manual_seed(opts.seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed(opts.seed)
     torch.backends.cudnn.benchmark = True
     torch.backends.cudnn.deterministic = False
     torch.use_deterministic_algorithms = False
