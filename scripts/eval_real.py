@@ -1,3 +1,6 @@
+import sys
+sys.path.append(".")
+sys.path.append("..")
 import os
 from argparse import ArgumentParser
 from glob import glob
@@ -11,26 +14,33 @@ import cv2
 from shaders.lambert import Lambert
 from shaders.disney import Disney
 from shaders.shadow_mapping import ShadowMapping
-
+import json
 
 class EvalReal:
     def __init__(self, opts):
         self.opts = opts
         os.makedirs(self.opts.out_dir, exist_ok=True)
 
-        self.img_dirs = sorted(glob('%s/*' % self.opts.img_dir))
-        self.als_paths = sorted(glob('%s/*/als.npy' % self.opts.als_dir))
+        if len(self.opts.list_human_name) == 0:
+            self.img_dirs = sorted(glob('%s/*' % self.opts.img_dir))
+        else:
+            self.img_dirs = ['%s/%s' % (self.opts.img_dir,human_name) for human_name in self.opts.list_human_name]
+        
+        if len(self.opts.list_light_name) == 0:
+            self.als_paths = sorted(glob('%s/*/als.npy' % self.opts.als_dir))
+        else:
+            self.als_paths = ['%s/%s/als.npy' % (self.opts.als_dir,light_name) for light_name in self.opts.list_light_name]
 
-        self.net_firststage = UNet_multi(self.opts,in_channels=4).to(self.opts.device)
+        self.net_firststage = UNet_multi(self.opts,in_channel=4).to(self.opts.device)
         self.net_firststage.load_state_dict(torch.load(self.opts.checkpoint_path_firststage)['model_state_dict'])
         self.net_firststage.eval()
         self.net_firststage.half()
 
-        self.net_depth = UNet(self.opts,in_channels=4,out_channels=1).to(self.opts.device)
+        self.net_depth = UNet(self.opts,in_channel=4,out_channel=1).to(self.opts.device)
         self.net_depth.load_state_dict(torch.load(self.opts.checkpoint_path_depth)['model_state_dict'])
         self.net_depth.eval()
 
-        self.net_refineshadow = UNet(self.opts,in_channels=4,out_channels=1,n_layer=3).to(self.opts.device)
+        self.net_refineshadow = UNet(self.opts,in_channel=4,out_channel=1,n_layer=3).to(self.opts.device)
         self.net_refineshadow.load_state_dict(torch.load(self.opts.checkpoint_path_refineshadow)['model_state_dict'])
         self.net_refineshadow.eval()
         self.net_refineshadow.half()
@@ -254,29 +264,31 @@ class EvalReal:
 
 def main(): 
     parser = ArgumentParser()
-    parser.add_argument('--device', default='cuda') # cuda or cpu
+    parser.add_argument('--device', default='cuda', help='cuda or cpu')
     parser.add_argument('--out_dir', default='./outputs/eval_real')
     parser.add_argument('--batch_size', default=1, type=int) #FIX
     parser.add_argument('--img_dir', default='./data/test_imgs')
     parser.add_argument('--checkpoint_path_firststage', default=None)
     parser.add_argument('--checkpoint_path_depth', default=None)
     parser.add_argument('--checkpoint_path_refineshadow', default=None)
-    parser.add_argument('--d_all_min', default=2.873195, type=float)
-    parser.add_argument('--d_all_max', default=5.990806, type=float)
-    parser.add_argument('--camera_distance', default=4.0, type=float)
-    parser.add_argument('--focal_length', default=50, type=float)
+    parser.add_argument('--d_all_min', default=2.873195, type=float, help='Minimum value of all trained depth maps.')
+    parser.add_argument('--d_all_max', default=5.990806, type=float, help='Maximum value of all trained depth maps.')
+    parser.add_argument('--camera_distance', default=4.0, type=float, help='Camera distance from the object.')
+    parser.add_argument('--focal_length', default=50, type=float, help='Focal length used for rendering training data ') 
     parser.add_argument('--depth_threshold', default=100000, type=float)
     parser.add_argument('--shadow_threshold', default=0.005, type=float)
     parser.add_argument('--window', default=2, type=float)
-    parser.add_argument('--range_sigma', default=20, type=float)
-    parser.add_argument('--resolution_optimize', default=256, type=int)
+    parser.add_argument('--range_sigma', default=20, type=float, help='The maximum value of sigma set during sigma optimization.')
+    parser.add_argument('--resolution_optimize', default=256, type=int, help='Resolution used for sigma optimization.')
     parser.add_argument('--resolution', default=1024, type=int)
     parser.add_argument('--eps', default=1e-6, type=float)
-    parser.add_argument('--als_dir', default='./data/test_lights')
-    parser.add_argument('--n_light', default=16, type=int)
-    parser.add_argument('--n_frame', default=120, type=int)
+    parser.add_argument('--als_dir', default='./data/test_lights', help='Directory of lighting data obtained by optimization.')
+    parser.add_argument('--n_light', default=16, type=int, help='Number of lights used to optimize an environment map.')
+    parser.add_argument('--n_frame', default=120, type=int, help='Total number of frames in the video.')
     parser.add_argument('--fps', default=24, type=float)
-    parser.add_argument('--output_intrinsics_and_shading', action='store_true')
+    parser.add_argument('--output_intrinsics_and_shading', action='store_true', help='Output the intermediate results.')
+    parser.add_argument('--list_human_name', nargs='+', type=str, default=[], help='Select specific images in img_dir. Usage: --list_human_name name1 name2') #'alyssum-mormino-VC0koS2cFCQ-unsplash','ananthu-ganesh-OTuaLtUQtxY-unsplash'
+    parser.add_argument('--list_light_name', nargs='+', type=str, default=[], help='Select specific images in als_dir. Usage: --list_light_name name1 name2') #'040_blue_lagoon_night_2k'
     opts = parser.parse_args()
 
     torch.backends.cudnn.benchmark = True
