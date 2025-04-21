@@ -84,7 +84,7 @@ def main():
     parser.add_argument('--als_dir', default=None)
     parser.add_argument('--n_light', default=16, type=int)
     parser.add_argument('--window', default=2, type=float)
-    parser.add_argument('--depth_threshold', default=100000, type=float)
+    parser.add_argument('--depth_threshold', default=0.075, type=float)
     parser.add_argument('--shadow_threshold', default=0.005, type=float)
     parser.add_argument('--eps', default=1e-6, type=float)
     parser.add_argument('--range_sigma', default=20, type=float)

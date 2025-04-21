@@ -85,6 +85,12 @@ class TrainRefineShadow:
         np.random.seed(worker_seed)
         random.seed(worker_seed)
 
+    def save_checkpoint(self, epoch):
+        # when the learning rate reaches the minimum value
+        if self.opts.checkpoint_path is None:
+            return ((epoch + 1) / self.opts.t_max) % 2 == 1
+        else:
+            return (epoch + 1) % (2*self.opts.t_max) == 0
 
     def train_val(self, epoch, is_train):
         self.net.train() if is_train else self.net.eval()
@@ -185,7 +191,7 @@ class TrainRefineShadow:
                 f.write(',%.7f' % np.mean(np.array(list_log[key])))
             f.write('\n')
 
-        if ((epoch + 1) / self.opts.t_max) % 2 == 1:
+        if self.save_checkpoint(epoch):
             batch_save = 0
             cv2.imwrite('%s/%04depoch_%s_%s.png' % (self.opts.out_dir,epoch,'train' if is_train else 'val',human_id[batch_save]),
                         utils.torch2np(255 * utils.lrgb2srgb(torch.cat([utils.clip_img((mask * torch.sum(source_diffuse_shading_wo_shadows,dim=1))[batch_save:batch_save+1],mask[batch_save:batch_save+1])[0],
@@ -234,7 +240,7 @@ def main():
     parser.add_argument('--als_dir', default=None)
     parser.add_argument('--n_light', default=16, type=int)
     parser.add_argument('--window', default=2, type=float)
-    parser.add_argument('--depth_threshold', default=100000, type=float)
+    parser.add_argument('--depth_threshold', default=0.075, type=float)
     parser.add_argument('--shadow_threshold', default=0.005, type=float)
     parser.add_argument('--eps', default=1e-6, type=float)
     parser.add_argument('--range_sigma', default=20, type=float)

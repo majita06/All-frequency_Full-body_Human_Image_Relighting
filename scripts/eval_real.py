@@ -201,9 +201,9 @@ class EvalReal:
                     cv2.imwrite('%s/normal.png' % intrinsics_save_dir,
                                 utils.torch2np(255 * utils.clip_img(mask*0.5*(normal_pred+1),mask)[0][0,[2,1,0]].permute(1,2,0)).astype(np.uint8))
                     cv2.imwrite('%s/specular.png' % intrinsics_save_dir,
-                                utils.torch2np(255 * utils.clip_img(specular_pred,mask)[0][0,0]).astype(np.uint8))
+                                utils.torch2np(255 * utils.clip_img(specular_pred,mask)[0][0].expand(3,-1,-1).permute(1,2,0)).astype(np.uint8))
                     cv2.imwrite('%s/roughness.png' % intrinsics_save_dir,
-                                utils.torch2np(255 * utils.clip_img(roughness_pred,mask)[0][0,0]).astype(np.uint8))
+                                utils.torch2np(255 * utils.clip_img(roughness_pred,mask)[0][0].expand(3,-1,-1).permute(1,2,0)).astype(np.uint8))
                     cv2.imwrite('%s/depth.png' % intrinsics_save_dir,
                                 cv2.applyColorMap((255 * utils.torch2np(utils.clip_img(mask*depth_norm_pred,mask)[0][0,0])).astype(np.uint8),cv2.COLORMAP_INFERNO))
 
@@ -376,8 +376,8 @@ def main():
     parser.add_argument('--n_frame', default=120, type=int, help='Total number of frames in the video.')
     parser.add_argument('--fps', default=24, type=float)
     parser.add_argument('--output_intrinsics_and_shading', action='store_true', help='Output the intermediate results.')
-    parser.add_argument('--list_human_name', nargs='+', type=str, default=[], help='Select specific images in img_dir. Usage: --list_human_name name1 name2') #'alyssum-mormino-VC0koS2cFCQ-unsplash','ananthu-ganesh-OTuaLtUQtxY-unsplash'
-    parser.add_argument('--list_light_name', nargs='+', type=str, default=[], help='Select specific images in als_dir. Usage: --list_light_name name1 name2') #'040_blue_lagoon_night_2k'
+    parser.add_argument('--list_human_name', nargs='+', type=str, default=[], help='Select specific images in img_dir. Usage: --list_human_name name1 name2')
+    parser.add_argument('--list_light_name', nargs='+', type=str, default=[], help='Select specific images in als_dir. Usage: --list_light_name name1 name2')
     parser.add_argument('--w_alpha', action='store_true', help='Whether to include alpha in the output')
     opts = parser.parse_args()
 

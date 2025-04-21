@@ -78,6 +78,13 @@ class TrainDepth:
         np.random.seed(worker_seed)
         random.seed(worker_seed)
 
+    def save_checkpoint(self, epoch):
+        # when the learning rate reaches the minimum value
+        if self.opts.checkpoint_path is None:
+            return ((epoch + 1) / self.opts.t_max) % 2 == 1
+        else:
+            return (epoch + 1) % (2*self.opts.t_max) == 0
+
     def train_val(self, epoch, is_train):
         self.net.train() if is_train else self.net.eval()
         list_log = defaultdict(list)
@@ -145,7 +152,7 @@ class TrainDepth:
             for key in self.list_loss_name if is_train else self.list_metric_name:
                 f.write(',%.7f' % np.mean(np.array(list_log[key])))
             f.write('\n')
-        if ((epoch + 1) / self.opts.t_max) % 2 == 1:
+        if self.save_checkpoint(epoch):
             batch_save = 0
             cv2.imwrite('%s/%04depoch_%s_%s.png' % (self.opts.out_dir,epoch,'train' if is_train else 'val',human_id[batch_save]),
                         np.concatenate([utils.torch2np(255 * utils.clip_img(img_w_bg[batch_save:batch_save+1],mask[batch_save:batch_save+1])[0][0,[2,1,0]].permute(1,2,0)),

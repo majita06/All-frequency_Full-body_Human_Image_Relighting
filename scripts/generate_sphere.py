@@ -264,7 +264,7 @@ def main():
     bpy.context.scene.cycles.samples = 256
     bpy.context.scene.cycles.filter_width = 1.5
 
-    env_paths = sorted(glob('%s/*/*.hdr' % (opts.env_dir)))[opts.start:opts.end]
+    env_paths = sorted(glob('%s/*.hdr' % (opts.env_dir)))[opts.start:opts.end]
     for env_path in env_paths:
         env_name = os.path.basename(env_path)[:-len('.hdr')]
         out_dir = '%s/%s' % (opts.out_dir,env_name)

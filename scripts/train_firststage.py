@@ -1,3 +1,6 @@
+import sys
+sys.path.append(".")
+sys.path.append("..")
 import os
 from argparse import ArgumentParser
 from tqdm import tqdm
@@ -13,16 +16,29 @@ import cv2
 import random
 from shaders.lambert import Lambert
 from shaders.disney import Disney
-
+import json
 
 class TrainFirstStage:
     def __init__(self, opts):
         self.opts = opts
         os.makedirs(self.opts.out_dir, exist_ok=True)
 
-        self.net = UNet_multi(self.opts,in_channels=4).to(self.opts.device)
+        # Save options
+        with open('%s/opt.json' % self.opts.out_dir, 'w') as f:
+            json.dump(vars(self.opts), f, indent=4, sort_keys=True)
+            
+        self.net = UNet_multi(self.opts,in_channel=4).to(self.opts.device)
+        if self.opts.checkpoint_path is not None:
+            self.net.load_state_dict(torch.load(self.opts.checkpoint_path)['model_state_dict'])
+        
         self.optimizer = torch.optim.Adam(self.net.parameters(), lr=self.opts.lr_max)
+        if self.opts.checkpoint_path is not None:
+            self.optimizer.load_state_dict(torch.load(self.opts.checkpoint_path)['optimizer_state_dict'])
+
         self.scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(self.optimizer, T_max=self.opts.t_max, eta_min=self.opts.lr_min)
+        if self.opts.checkpoint_path is not None:
+            self.scheduler.load_state_dict(torch.load(self.opts.checkpoint_path)['scheduler_state_dict'])
+
 
         g = torch.Generator()
         g.manual_seed(self.opts.seed)
@@ -89,6 +105,13 @@ class TrainFirstStage:
         np.random.seed(worker_seed)
         random.seed(worker_seed)
 
+    def save_checkpoint(self, epoch):
+        # when the learning rate reaches the minimum value
+        if self.opts.checkpoint_path is None:
+            return ((epoch + 1) / self.opts.t_max) % 2 == 1
+        else:
+            return (epoch + 1) % (2*self.opts.t_max) == 0
+            
     def train_val(self, epoch, is_train):
         self.net.train() if is_train else self.net.eval()
         list_log = defaultdict(list)
@@ -318,11 +341,11 @@ class TrainFirstStage:
                                 list_log[metric_name].append(self.lpips(utils.lrgb2srgb(albedo_gt), utils.lrgb2srgb(albedo_pred)))
                             
                             elif metric_name == 'rmse_w_mask_normal':
-                                list_log[metric_name].append(metrics.rmse_w_mask(normal_gt, normal_pred, mask))
+                                list_log[metric_name].append(metrics.rmse_w_mask(0.5*(normal_gt+1), 0.5*(normal_pred+1), mask))
                             elif metric_name == 'ssim_w_mask_normal':
-                                list_log[metric_name].append(metrics.ssim_w_mask(normal_gt, normal_pred, mask))
+                                list_log[metric_name].append(metrics.ssim_w_mask(0.5*(normal_gt+1), 0.5*(normal_pred+1), mask))
                             elif metric_name == 'lpips_normal':
-                                list_log[metric_name].append(self.lpips(normal_gt, normal_pred))
+                                list_log[metric_name].append(self.lpips(0.5*(normal_gt+1), 0.5*(normal_pred+1)))
 
                             elif metric_name == 'rmse_w_mask_specular':
                                 if len(idx_train_specular) != 0:
@@ -416,7 +439,7 @@ class TrainFirstStage:
             for key in self.list_loss_name if is_train else self.list_metric_name:
                 f.write(',%.7f' % np.mean(np.array(list_log[key])))
             f.write('\n')
-        if ((epoch + 1) / self.opts.t_max) % 2 == 1:
+        if self.save_checkpoint(epoch):
             batch_save = 0
             save_pred = torch.cat([utils.clip_img(utils.lrgb2srgb(albedo_pred)[batch_save:batch_save+1],mask[batch_save:batch_save+1])[0],
                                 utils.clip_img(0.5*(normal_pred+1)[batch_save:batch_save+1],mask[batch_save:batch_save+1])[0],
@@ -471,7 +494,7 @@ def main():
     parser.add_argument('--als_dir', default=None)
     parser.add_argument('--n_light', default=16, type=int)
     parser.add_argument('--window', default=2, type=float)
-    parser.add_argument('--depth_threshold', default=100000, type=float)
+    parser.add_argument('--depth_threshold', default=0.075, type=float)
     parser.add_argument('--shadow_threshold', default=0.005, type=float)
     parser.add_argument('--eps', default=1e-6, type=float)
     parser.add_argument('--range_sigma', default=20, type=float)
@@ -479,6 +502,7 @@ def main():
     parser.add_argument('--other_dataset_dir', default=None)
     parser.add_argument('--train_sigma', action='store_true')
     parser.add_argument('--amp', action='store_true')
+    parser.add_argument('--checkpoint_path', default=None)
 
     
     opts = parser.parse_args()
@@ -486,7 +510,8 @@ def main():
     np.random.seed(opts.seed)
     random.seed(opts.seed)
     torch.manual_seed(opts.seed)
-    torch.cuda.manual_seed(opts.seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed(opts.seed)
     torch.backends.cudnn.benchmark = True
     torch.backends.cudnn.deterministic = False
     torch.use_deterministic_algorithms = False

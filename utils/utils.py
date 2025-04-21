@@ -241,8 +241,14 @@ def clip_img(img,mask):
     mask_clipped = mask[...,min_ind:max_ind]
     return img_clipped, mask_clipped
 
-def generate_video(save_video_path, frame_paths, fps, disp_log=False):
+def generate_video(save_video_path, frame_paths, fps, disp_log=False, alpha=False):
     if disp_log:
-        os.system('ffmpeg -y -framerate %f -i %s -c:v libx264 -pix_fmt yuv420p %s' % (fps, frame_paths, save_video_path))
+        if alpha:
+            os.system('ffmpeg -y -framerate %f -i %s -c:v libvpx-vp9 -pix_fmt yuva420p %s' % (fps, frame_paths, save_video_path))
+        else:
+            os.system('ffmpeg -y -framerate %f -i %s -c:v libx264 -pix_fmt yuv420p %s' % (fps, frame_paths, save_video_path))
     else:
-        os.system('ffmpeg -y -framerate %f -i %s -c:v libx264 -pix_fmt yuv420p -loglevel fatal %s' % (fps, frame_paths, save_video_path))
+        if alpha:
+            os.system('ffmpeg -y -framerate %f -i %s -c:v libvpx-vp9 -pix_fmt yuva420p -loglevel fatal %s' % (fps, frame_paths, save_video_path))
+        else:
+            os.system('ffmpeg -y -framerate %f -i %s -c:v libx264 -pix_fmt yuv420p -loglevel fatal %s' % (fps, frame_paths, save_video_path))
