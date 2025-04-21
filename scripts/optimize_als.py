@@ -173,19 +173,17 @@ class OptimizeAls:
 
 
             loss = 0
-            loss_lap = 0
             for lap_size in self.opts.lap_sizes:
                 shadow_lap = kornia.filters.laplacian(utils.lrgb2srgb(diffuse_shading_w_shadow_sphere_and_plane_gt.clamp(self.opts.eps,None)),lap_size)
                 shadow_lap_hat = kornia.filters.laplacian(utils.lrgb2srgb(diffuse_shading_w_shadow_sphere_and_plane_pred.clamp(self.opts.eps,None)),lap_size)            
-                loss_lap = loss_lap + F.l1_loss(shadow_lap, shadow_lap_hat)
-            loss = loss + loss_lap
+                loss = loss + F.l1_loss(shadow_lap, shadow_lap_hat)
 
             loss.backward()
             optimizer.step()
             scheduler.step()
 
             with open(log_sigma_path,'a') as f:
-                f.write('%d,%.9f,%.9f\n' % (itr,loss_lap.item(),loss.item())) #TODO
+                f.write('%d,%.9f,%.9f\n' % (itr,loss.item()))
 
             if loss.item() < min_loss:
                 min_loss = loss.item()

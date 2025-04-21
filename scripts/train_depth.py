@@ -90,7 +90,7 @@ class TrainDepth:
         list_log = defaultdict(list)
         for itr, data_dict in enumerate(tqdm(self.train_dataloader if is_train else self.val_dataloader,desc='%d' % epoch,ncols=50)):
             with torch.set_grad_enabled(is_train):
-                if self.opts.debug and itr >= 2: #TODO
+                if self.opts.debug and itr >= 5:
                     break
                 if is_train:
                     self.optimizer.zero_grad(set_to_none=True)
