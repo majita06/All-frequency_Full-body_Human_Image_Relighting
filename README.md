@@ -36,8 +36,8 @@ https://drive.google.com/drive/folders/17sE-nQEOgIL8KeWcD_CLFlH5MMo-0JP2?usp=sha
 python eval_real.py --img_dir ./data/test_imgs --als_dir ./data/test_lights --out_dir ./outputs/eval_real --checkpoint_path_firststage FIRSTSTAGE_MODEL_PATH --checkpoint_path_depth DEPTH_MODEL_PATH --checkpoint_path_refineshadow REFINESHADOW_MODEL_PATH --device cuda
 ```
 where
-- img_dir: `./data/test_imgs` contains three pre-defined person images and their binary masks.
-- als_dir: `./data/test_lights` contains three pre-defined illumination data.
+- img_dir: `./data/test_imgs` contains a human image and the binary mask.
+- als_dir: `./data/test_lights` contains illumination data.
 - out_dir: Output directory for relighting results
 - checkpoint_path_firststage: Downloaded model path
 - checkpoint_path_depth: Downloaded model path
