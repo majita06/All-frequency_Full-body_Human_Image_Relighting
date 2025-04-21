@@ -108,9 +108,9 @@ class TrainFirstStage:
     def save_checkpoint(self, epoch):
         # when the learning rate reaches the minimum value
         if self.opts.checkpoint_path is None:
-            return ((epoch + 1) / self.opts.t_max) % 2 == 1
+            return (epoch + 1) % (2 * self.opts.t_max) == t_max
         else:
-            return (epoch + 1) % (2*self.opts.t_max) == 0
+            return (epoch + 1) % (2 * self.opts.t_max) == 0
             
     def train_val(self, epoch, is_train):
         self.net.train() if is_train else self.net.eval()
