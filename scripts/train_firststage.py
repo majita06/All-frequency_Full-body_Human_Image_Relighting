@@ -468,7 +468,7 @@ class TrainFirstStage:
     def training(self):
         for epoch in range(self.opts.n_epoch):
             self.train_val(epoch,is_train=True)
-            if ((epoch + 1) / self.opts.t_max) % 2 == 1:
+            if self.save_checkpoint(epoch):
                 self.train_val(epoch,is_train=False)
     
 def main():
