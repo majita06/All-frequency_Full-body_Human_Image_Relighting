@@ -101,9 +101,10 @@ The following data are required as a minimum for learning.
         ├── ...
 
 
-The human image dataset created from [human generator v3](https://www.humgen3d.com/) can be downloaded from the following link.
-
-(COMING SOON...)
+If you would like to obtain the dataset, please send us an email. When sending your request, please make sure to address the email to all three authors listed below:
+- tajima.daichi.sp(AT)alumni.tsukuba.ac.jp
+- kanamori(AT)cs.tsukuba.ac.jp
+- endo(AT)cs.tsukuba.ac.jp
 
 Note: Our model also uses datasets other than those listed above for training. See our paper for more details.
 
